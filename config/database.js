@@ -2,7 +2,7 @@ const mongoose=require('mongoose')
 
 //DB configuraton 
 mongoose.Promise=global.Promise
-mongoose.connect('mongodb://localhost:27017/contact-manager-jan', { useNewUrlParser: true })
+mongoose.connect('mongodb://localhost:27017/authentication', { useNewUrlParser: true })
 .then(function(){
     console.log('connected to DB')
 })

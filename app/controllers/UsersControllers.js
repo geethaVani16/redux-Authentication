@@ -1,100 +1,52 @@
 const express=require('express')
+const _ =require('lodash')
 const router=express.Router()
 const { User }=require('../models/User')
 const { authenticateUser } = require('../middlewares/authentication.js')
 
 //localhost:3000/users/register
-const userExistsInDB = async (body) => {
-    return new Promise((resolve, reject) => {
-        User.findOne({email: body.email})
-        .then((user) => {
-          if (user) {
-              reject((409,"user already exists"))
-          }
-          else {
-              resolve(false)
-          }
-           
-        })
-        .catch((err) => {
-          reject((422, err.message))
-        });
+router.post("/register", function(req,res){
+    const body=req.body
+    const user = new User(body)
+    //console.log(user.isNew)//true 
+    //before saving the record user is new so it returns true
+    user.save()
+    .then(function(user){
+        //console.log(user.isNew) //false
+        //after saving the record is old so it returns false
+        res.send(user)
     })
-  }
-
-
-  const createUserInDB = async (body) => {
-    return new Promise((resolve, reject) => {
-        const user = new User(body)
-        user.save()
-        .then((user) => {
-            resolve(user)
-            //   console.log(user,"llllllllllll")
-        })
-        .catch((err) => {
-            console.log(err)
-          reject((422, err))
-        });
+    .catch(function(err){
+        res.send(err)
     })
-  }
-
-
-
-router.post("/register", async function(req,res){
-    try{
-        const body=req.body
-        const userExists= await userExistsInDB(body)
-        if(!userExists) {
-            const createUser =createUserInDB(body)
-            console.log('liii')
-            res.status("200").json(createUser)
-        }
-    }
-    catch (error) {
-        console.log(res, error)
-      }
-   
+    
 })
 
 
 //localhost:3000/users/login
 router.post('/login',function(req,res){
+    console.log("hii")
      const body=req.body
+     let user
      User.findByCredentials(body.email,body.password)
-     .then(function(user){
+     .then(function(userFound){
+         user = userFound
          return user.generateToken() //it will instance method 
      })
      .then(function(token){
-         res.send({token})
+        user =_.pick (user,["_id","username","email"])
+         console.log(token,"token")
+         res.json({token,user})
      })
      .catch(function(err){
-         res.status(404).send(err)
+         res.send(err)
      })
-
-//     User.findOne({ email: body.email })
-//     .then(function(user){
-//         //console.log(user)
-//         if(!user){
-//             res.status("404").send('invalid email/invalid password')
-//         }
-//         bcryptjs.compare(body.password,user.password)
-//         .then(function(result){
-//             if(result){ //return boolen value
-//                 res.send(user)//return user data when match with password and username
-//             } else{
-//                 res.status('404').send('invalid password/invalid password')
-//             }
-//         })
-//     })
-//     .catch(function(err){
-//         res.send(err)
-//     })
 })
 
 //localhost:3000/users/account
 router.get('/account',authenticateUser, function(req,res){
     const { user }= req
-    res.send(user)
+    res.send(_.pick (user,["_id","username","email"]))
 })
 
 
